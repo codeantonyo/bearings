@@ -42,6 +42,14 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #ff5c1f
 
 @media (max-width: 1160px) { .hdr-temp { display: none; } }
 
+/* Burger button + mobile drawer show only on small screens. */
+.burger { display: none; }
+.mobile-only { display: block; }
+@media (min-width: 901px) {
+  .burger { display: none !important; }
+  .mobile-only { display: none !important; }
+}
+
 /* Responsive: collapse the wide two-column grids on small screens. */
 @media (max-width: 900px) {
   .grid-2 { grid-template-columns: 1fr !important; }
@@ -50,7 +58,10 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #ff5c1f
   .grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
   .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
   .nav-links { display: none !important; }
+  .burger { display: inline-flex !important; }
 }
 @media (max-width: 560px) {
   .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
+  .site-header { padding-left: 18px !important; padding-right: 18px !important; gap: 14px !important; }
+  .hero-h1 { font-size: 52px !important; }
 }

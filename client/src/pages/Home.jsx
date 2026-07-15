@@ -21,7 +21,7 @@ export default function Home() {
       <section className="grid-hero" style={{ display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: 40, alignItems: 'center', padding: '72px 40px 56px', maxWidth: 1280, margin: '0 auto' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
           <div style={{ fontFamily: FONT.mono, fontSize: 12, letterSpacing: 3, color: C.ember }}>HIGH TEMPERATURE BALL BEARINGS</div>
-          <h1 style={{ margin: 0, fontSize: 72, lineHeight: 1.02, fontWeight: 700, letterSpacing: -2 }}>Built for<br />the heat.</h1>
+          <h1 className="hero-h1" style={{ margin: 0, fontSize: 72, lineHeight: 1.02, fontWeight: 700, letterSpacing: -2 }}>Built for<br />the heat.</h1>
           <p style={{ margin: 0, maxWidth: 440, fontSize: 17, lineHeight: 1.6, color: C.muted }}>Stabilized deep-groove ball bearings rated from −30 °C to +350 °C. Manufactured by Beco Italy, shipped fast from the Netherlands.</p>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             <PrimaryButton onClick={() => nav('/catalogue')}>BROWSE CATALOGUE →</PrimaryButton>
