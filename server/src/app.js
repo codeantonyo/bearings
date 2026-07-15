@@ -13,6 +13,18 @@ export function createApp() {
   const app = express();
   app.use(cors());
 
+  // Health + diagnostics — declared BEFORE the DB-init middleware so it always
+  // responds, even when the database is misconfigured. `db` shows whether a
+  // Postgres URL was resolved; `dbEnvSeen` lists which connection env-var NAMES
+  // are present (never values) so a missing/renamed variable is easy to spot.
+  app.get('/api/health', (_req, res) => res.json({
+    ok: true,
+    service: 'beco-bearings-api',
+    db: config.databaseUrl ? 'postgres' : (isServerless ? 'MISCONFIGURED (no Postgres URL)' : 'pglite (local)'),
+    dbEnvSeen: dbEnvSeen(),
+    blob: config.blobToken ? 'configured' : 'not-configured',
+  }));
+
   // Body parsing that is safe both locally and on Vercel. On Vercel the
   // platform may already populate req.body for JSON requests; re-running
   // express.json() would clobber it, so only parse when it hasn't been.
@@ -32,16 +44,6 @@ export function createApp() {
   // Local dev: serve uploaded photos. On Vercel, images are absolute Blob URLs.
   app.use('/uploads', express.static(uploadsDir));
 
-  // Health + diagnostics. `db` shows whether a Postgres URL was resolved, and
-  // `dbEnvSeen` lists which connection env-var NAMES are present (never values)
-  // so a missing/renamed variable is easy to spot in production.
-  app.get('/api/health', (_req, res) => res.json({
-    ok: true,
-    service: 'beco-bearings-api',
-    db: config.databaseUrl ? 'postgres' : (isServerless ? 'MISCONFIGURED (no Postgres URL)' : 'pglite (local)'),
-    dbEnvSeen: dbEnvSeen(),
-    blob: config.blobToken ? 'configured' : 'not-configured',
-  }));
   app.use('/api/auth', authRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/orders', orderRoutes);
