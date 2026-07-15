@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { config, dbEnvSeen, isServerless } from './config.js';
 import { ensureReady } from './db.js';
 import { authOptional } from './auth.js';
 import { uploadsDir } from './blob.js';
@@ -31,7 +32,16 @@ export function createApp() {
   // Local dev: serve uploaded photos. On Vercel, images are absolute Blob URLs.
   app.use('/uploads', express.static(uploadsDir));
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'beco-bearings-api' }));
+  // Health + diagnostics. `db` shows whether a Postgres URL was resolved, and
+  // `dbEnvSeen` lists which connection env-var NAMES are present (never values)
+  // so a missing/renamed variable is easy to spot in production.
+  app.get('/api/health', (_req, res) => res.json({
+    ok: true,
+    service: 'beco-bearings-api',
+    db: config.databaseUrl ? 'postgres' : (isServerless ? 'MISCONFIGURED (no Postgres URL)' : 'pglite (local)'),
+    dbEnvSeen: dbEnvSeen(),
+    blob: config.blobToken ? 'configured' : 'not-configured',
+  }));
   app.use('/api/auth', authRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/orders', orderRoutes);

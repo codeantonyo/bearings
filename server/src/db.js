@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { config } from './config.js';
+import { config, isServerless, dbEnvSeen } from './config.js';
 
 // Data layer that speaks Postgres in production (Neon / Vercel Postgres via the
 // `pg` driver) and runs an in-process PGlite Postgres for local development —
@@ -38,6 +38,16 @@ async function initBackend() {
           }
         },
       };
+    }
+
+    // On a serverless host the filesystem is read-only, so PGlite cannot run.
+    // Fail loudly with a fix instead of a cryptic EROFS mkdir error.
+    if (isServerless) {
+      throw new Error(
+        'No Postgres connection string found. Connect a Postgres database in the ' +
+        'Vercel project (Storage → Postgres/Neon) and redeploy. ' +
+        `Detected DB env vars: ${dbEnvSeen().join(', ') || 'none'}.`
+      );
     }
 
     // Local dev: PGlite (pure JS/WASM, no native build, persists to disk).
