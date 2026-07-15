@@ -1,0 +1,56 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #0b0d10;
+  color: #e8e6e1;
+  -webkit-font-smoothing: antialiased;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+a { color: #ff5c1f; text-decoration: none; }
+a:hover { color: #ffe9cf; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+@keyframes toast-in {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes toast-bar {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+::selection { background: #ff5c1f; color: #0b0d10; }
+
+input::placeholder, textarea::placeholder { color: #5a5f66; }
+
+button { font-family: inherit; }
+
+/* Inputs reset so focus rings match the design (orange border, no outline). */
+input, textarea, select { font-family: 'IBM Plex Mono', monospace; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: #ff5c1f !important; }
+
+/* Hover helper used across cards/buttons (JS toggles inline styles too, but
+   these give crisp default transitions). */
+.beco-hover { transition: border-color .15s ease, background .15s ease, color .15s ease, opacity .15s ease; }
+
+@media (max-width: 1160px) { .hdr-temp { display: none; } }
+
+/* Responsive: collapse the wide two-column grids on small screens. */
+@media (max-width: 900px) {
+  .grid-2 { grid-template-columns: 1fr !important; }
+  .grid-hero { grid-template-columns: 1fr !important; }
+  .shop-layout { grid-template-columns: 1fr !important; }
+  .grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .nav-links { display: none !important; }
+}
+@media (max-width: 560px) {
+  .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
+}
