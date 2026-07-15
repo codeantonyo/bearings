@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { config } from './config.js';
+import { config, isServerless } from './config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const uploadsDir = path.join(__dirname, '..', 'uploads');
@@ -21,6 +21,13 @@ export async function saveImage(file) {
       contentType: file.mimetype,
     });
     return url;
+  }
+
+  // On serverless without Blob configured, the local disk is read-only.
+  if (isServerless) {
+    const err = new Error('Photo uploads need Vercel Blob. In the Vercel project: Storage → create a Blob store and connect it, then redeploy.');
+    err.status = 503;
+    throw err;
   }
 
   fs.mkdirSync(uploadsDir, { recursive: true });
