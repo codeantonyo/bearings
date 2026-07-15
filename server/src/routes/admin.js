@@ -1,25 +1,15 @@
 import { Router } from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { db } from '../db.js';
+import { query } from '../db.js';
 import { requireAdmin } from '../auth.js';
 import { toProduct } from './products.js';
+import { saveImage, removeImage } from '../blob.js';
+import { ah } from '../util.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
-fs.mkdirSync(uploadsDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    cb(null, `product-${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`);
-  },
-});
+// In-memory storage: the buffer is forwarded to Vercel Blob (or written to disk
+// locally). Works in serverless where there is no persistent filesystem.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (/^image\//.test(file.mimetype)) cb(null, true);
@@ -32,14 +22,14 @@ router.use(requireAdmin);
 
 // ---- Products -------------------------------------------------------------
 
-// GET /api/admin/products -> all products (including inactive)
-router.get('/products', (_req, res) => {
-  const rows = db.prepare('SELECT * FROM products ORDER BY series, model').all();
+router.get('/products', ah(async (_req, res) => {
+  const { rows } = await query('SELECT * FROM products ORDER BY series, model');
   res.json({ products: rows.map(toProduct) });
-});
+}));
 
-function readProductBody(b) {
-  return {
+router.post('/products', ah(async (req, res) => {
+  const b = req.body || {};
+  const p = {
     sku: String(b.sku || '').trim(),
     model: String(b.model || '').trim(),
     series: String(b.series || '').trim(),
@@ -52,90 +42,84 @@ function readProductBody(b) {
     rpm: parseInt(b.rpm, 10) || 0,
     c0: Number(b.c0) || 0,
   };
-}
-
-// POST /api/admin/products -> create
-router.post('/products', (req, res) => {
-  const p = readProductBody(req.body);
   if (!p.sku || !p.model || !p.series) return res.status(400).json({ error: 'SKU, model and series are required.' });
   if (!Number.isFinite(p.price) || p.price < 0) return res.status(400).json({ error: 'Price must be a positive number.' });
   if (!Number.isFinite(p.stock) || p.stock < 0) return res.status(400).json({ error: 'Stock must be a non-negative integer.' });
 
-  const dup = db.prepare('SELECT id FROM products WHERE sku = ?').get(p.sku);
-  if (dup) return res.status(409).json({ error: 'A product with this SKU already exists.' });
+  const dup = await query('SELECT id FROM products WHERE sku = $1', [p.sku]);
+  if (dup.rows[0]) return res.status(409).json({ error: 'A product with this SKU already exists.' });
 
-  const info = db.prepare(`
-    INSERT INTO products (sku, model, series, price, stock, d, outer_d, width, weight_g, rpm, c0)
-    VALUES (@sku, @model, @series, @price, @stock, @d, @outer_d, @width, @weight_g, @rpm, @c0)
-  `).run(p);
-  const row = db.prepare('SELECT * FROM products WHERE id = ?').get(Number(info.lastInsertRowid));
-  res.status(201).json({ product: toProduct(row) });
-});
+  const { rows } = await query(
+    `INSERT INTO products (sku, model, series, price, stock, d, outer_d, width, weight_g, rpm, c0)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+    [p.sku, p.model, p.series, p.price, p.stock, p.d, p.outer_d, p.width, p.weight_g, p.rpm, p.c0]
+  );
+  res.status(201).json({ product: toProduct(rows[0]) });
+}));
 
-// PATCH /api/admin/products/:id -> update any provided fields
-router.patch('/products/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+router.patch('/products/:id', ah(async (req, res) => {
+  const cur = await query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+  const row = cur.rows[0];
   if (!row) return res.status(404).json({ error: 'Product not found' });
 
   const b = req.body || {};
-  const map = { sku: 'sku', model: 'model', series: 'series', price: 'price', stock: 'stock',
-    d: 'd', D: 'outer_d', W: 'width', weight_g: 'weight_g', rpm: 'rpm', c0: 'c0', active: 'active' };
+  // map: request key -> { col, cast }
+  const map = {
+    sku: ['sku', String], model: ['model', String], series: ['series', String],
+    price: ['price', Number], stock: ['stock', (v) => parseInt(v, 10)],
+    d: ['d', Number], D: ['outer_d', Number], W: ['width', Number],
+    weight_g: ['weight_g', Number], rpm: ['rpm', (v) => parseInt(v, 10)],
+    c0: ['c0', Number], active: ['active', (v) => !!v],
+  };
+
   const sets = [];
-  const vals = {};
-  for (const [key, col] of Object.entries(map)) {
+  const vals = [];
+  for (const [key, [col, cast]] of Object.entries(map)) {
     if (b[key] === undefined) continue;
-    let v = b[key];
-    if (['price', 'd', 'D', 'W', 'weight_g', 'c0'].includes(key)) v = Number(v);
-    if (['stock', 'rpm'].includes(key)) v = parseInt(v, 10);
-    if (key === 'active') v = b[key] ? 1 : 0;
+    let v = cast(b[key]);
     if (key === 'sku') {
       v = String(v).trim();
-      const dup = db.prepare('SELECT id FROM products WHERE sku = ? AND id != ?').get(v, row.id);
-      if (dup) return res.status(409).json({ error: 'Another product already uses this SKU.' });
+      const dup = await query('SELECT id FROM products WHERE sku = $1 AND id <> $2', [v, row.id]);
+      if (dup.rows[0]) return res.status(409).json({ error: 'Another product already uses this SKU.' });
     }
-    sets.push(`${col} = @${col}`);
-    vals[col] = v;
+    vals.push(v);
+    sets.push(`${col} = $${vals.length}`);
   }
   if (sets.length === 0) return res.json({ product: toProduct(row) });
 
-  vals.id = row.id;
-  db.prepare(`UPDATE products SET ${sets.join(', ')} WHERE id = @id`).run(vals);
-  const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(row.id);
-  res.json({ product: toProduct(updated) });
-});
+  vals.push(row.id);
+  const { rows } = await query(`UPDATE products SET ${sets.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
+  res.json({ product: toProduct(rows[0]) });
+}));
 
-// DELETE /api/admin/products/:id
-router.delete('/products/:id', (req, res) => {
-  const info = db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
-  if (info.changes === 0) return res.status(404).json({ error: 'Product not found' });
+router.delete('/products/:id', ah(async (req, res) => {
+  const cur = await query('SELECT image FROM products WHERE id = $1', [req.params.id]);
+  if (!cur.rows[0]) return res.status(404).json({ error: 'Product not found' });
+  await query('DELETE FROM products WHERE id = $1', [req.params.id]);
+  await removeImage(cur.rows[0].image);
   res.json({ ok: true });
-});
+}));
 
-// POST /api/admin/products/:id/image -> upload/replace product photo
-router.post('/products/:id/image', upload.single('image'), (req, res) => {
-  const row = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
+router.post('/products/:id/image', upload.single('image'), ah(async (req, res) => {
+  const cur = await query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+  const row = cur.rows[0];
   if (!row) return res.status(404).json({ error: 'Product not found' });
   if (!req.file) return res.status(400).json({ error: 'No image uploaded.' });
 
-  // Remove the previous file if it lived in our uploads dir.
-  if (row.image && row.image.startsWith('/uploads/')) {
-    const old = path.join(uploadsDir, path.basename(row.image));
-    fs.promises.unlink(old).catch(() => {});
-  }
-  const publicPath = `/uploads/${req.file.filename}`;
-  db.prepare('UPDATE products SET image = ? WHERE id = ?').run(publicPath, row.id);
-  const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(row.id);
-  res.json({ product: toProduct(updated) });
-});
+  const url = await saveImage(req.file);
+  await removeImage(row.image); // clean up the previous photo
+  const { rows } = await query('UPDATE products SET image = $1 WHERE id = $2 RETURNING *', [url, row.id]);
+  res.json({ product: toProduct(rows[0]) });
+}));
 
 // ---- Orders ---------------------------------------------------------------
 
-// GET /api/admin/orders -> every order with its items
-router.get('/orders', (_req, res) => {
-  const orders = db.prepare('SELECT * FROM orders ORDER BY id DESC').all();
-  const itemStmt = db.prepare('SELECT sku, name, price, qty FROM order_items WHERE order_id = ?');
-  res.json({
-    orders: orders.map((o) => ({
+router.get('/orders', ah(async (_req, res) => {
+  const { rows: orders } = await query('SELECT * FROM orders ORDER BY id DESC');
+  const result = [];
+  for (const o of orders) {
+    const { rows: items } = await query('SELECT sku, name, price, qty FROM order_items WHERE order_id = $1', [o.id]);
+    result.push({
       id: o.id,
       orderNum: o.order_num,
       email: o.email,
@@ -145,9 +129,10 @@ router.get('/orders', (_req, res) => {
       subtotal: o.subtotal,
       status: o.status,
       date: o.created_at,
-      items: itemStmt.all(o.id),
-    })),
-  });
-});
+      items,
+    });
+  }
+  res.json({ orders: result });
+}));
 
 export default router;

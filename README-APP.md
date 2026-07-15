@@ -1,30 +1,37 @@
 # BECO Bearings — full-stack shop
 
-A React + Node/Express + SQLite implementation of the Beco Bearings design.
+A React + Node/Express + Postgres implementation of the Beco Bearings design.
 Extreme-temperature ball bearing store with real accounts, a working cart, an
 admin panel, and a checkout that stops right before the card payment gateway
-(ready for Stripe).
+(ready for Stripe). Deploys to **Vercel** as a single project.
 
 ```
 BEARINGS/
-├── server/     Express API + SQLite database (auth, products, orders, admin)
+├── api/        Vercel serverless entry (runs the Express app)
+├── server/     Express API + data layer (auth, products, orders, admin)
 ├── client/     React (Vite) frontend — all pages from the design
+├── vercel.json Vercel build + routing config
 └── project/    The original Claude Design HTML prototype (reference only)
 ```
+
+**Database:** Postgres in production (Neon / Vercel Postgres via `DATABASE_URL`).
+Locally it transparently uses an in-process **PGlite** database — so there is
+**nothing to install or configure to run it on your machine**.
+
+**Deploying?** See **[DEPLOY.md](DEPLOY.md)** for the full Vercel walkthrough.
 
 ## Prerequisites
 
 - Node.js 18+ (built and tested on Node 24)
 
-## Run it (two terminals)
+## Run it locally (two terminals)
 
-**1. Backend** — creates `server/beco.db`, seeds the catalogue and the admin
-account on first start:
+**1. Backend** — seeds the catalogue + admin account on first start, using a
+local PGlite database (no setup needed):
 
 ```bash
-cd server
-npm install        # first time only
-npm start          # -> http://localhost:4000
+npm install        # first time only (installs the API dependencies at the root)
+npm run dev:server # -> http://localhost:4000
 ```
 
 **2. Frontend:**
@@ -46,7 +53,8 @@ Open **http://localhost:5173**. The Vite dev server proxies `/api` and
 
 Change the admin credentials by copying `server/.env.example` to `server/.env`
 and editing `ADMIN_EMAIL` / `ADMIN_PASSWORD` **before the first run** (or delete
-`server/beco.db` to re-seed).
+the local `server/.pgdata/` folder to re-seed). In production, set these as
+environment variables in Vercel.
 
 ## What works
 
@@ -74,8 +82,8 @@ and editing `ADMIN_EMAIL` / `ADMIN_PASSWORD` **before the first run** (or delete
 
 Until you upload real photos, each product shows a generated SVG bearing in its
 temperature-class colour. In the admin panel, click **PHOTO** on any product row
-to upload an image — it's stored in `server/uploads/` and shown everywhere that
-product appears.
+to upload an image. In production it's stored in **Vercel Blob**; locally it's
+saved to `server/uploads/`. Either way it shows everywhere that product appears.
 
 ## Payment gateway (next step — intentionally not wired)
 
@@ -86,6 +94,8 @@ disabled until Stripe is connected. Full wiring instructions are in
 
 ## Notes
 
-- Database is a single file, `server/beco.db` (SQLite). Delete it to reset all
-  data and re-seed.
-- `server/.env` is optional; sensible defaults are used if it's absent.
+- **Local database** lives in `server/.pgdata/` (PGlite). Delete that folder to
+  reset all local data and re-seed.
+- `server/.env` is optional locally; sensible defaults are used if it's absent.
+- **Production** uses Postgres (`DATABASE_URL`) + Vercel Blob — see
+  [DEPLOY.md](DEPLOY.md).

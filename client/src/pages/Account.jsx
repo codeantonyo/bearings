@@ -142,7 +142,7 @@ function Row({ k, v, last }) {
 
 function statusColor(s) { return s === 'paid' ? '#7ddb8a' : s === 'pending_payment' ? '#ffb24d' : '#8a8f96'; }
 function fmtDate(s) {
-  const d = new Date((s || '').replace(' ', 'T') + 'Z');
+  const d = new Date(s);
   if (isNaN(d)) return s;
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
 }

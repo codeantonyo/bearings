@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { db } from '../db.js';
+import { query } from '../db.js';
+import { ah } from '../util.js';
 
 const router = Router();
 
@@ -23,17 +24,17 @@ export function toProduct(row) {
   };
 }
 
-// GET /api/products  -> all active products
-router.get('/', (_req, res) => {
-  const rows = db.prepare('SELECT * FROM products WHERE active = 1 ORDER BY series, model').all();
+// GET /api/products -> all active products
+router.get('/', ah(async (_req, res) => {
+  const { rows } = await query('SELECT * FROM products WHERE active = true ORDER BY series, model');
   res.json({ products: rows.map(toProduct) });
-});
+}));
 
 // GET /api/products/:sku
-router.get('/:sku', (req, res) => {
-  const row = db.prepare('SELECT * FROM products WHERE sku = ? AND active = 1').get(req.params.sku);
-  if (!row) return res.status(404).json({ error: 'Product not found' });
-  res.json({ product: toProduct(row) });
-});
+router.get('/:sku', ah(async (req, res) => {
+  const { rows } = await query('SELECT * FROM products WHERE sku = $1 AND active = true', [req.params.sku]);
+  if (!rows[0]) return res.status(404).json({ error: 'Product not found' });
+  res.json({ product: toProduct(rows[0]) });
+}));
 
 export default router;

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { config } from './config.js';
-import { db } from './db.js';
+import { query } from './db.js';
 
 export function signToken(user) {
   return jwt.sign(
@@ -15,15 +15,15 @@ export function publicUser(user) {
 }
 
 // Attaches req.user if a valid Bearer token is present; otherwise leaves it null.
-export function authOptional(req, _res, next) {
+export async function authOptional(req, _res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   req.user = null;
   if (token) {
     try {
       const payload = jwt.verify(token, config.jwtSecret);
-      const user = db.prepare('SELECT id, email, name, role FROM users WHERE id = ?').get(payload.id);
-      if (user) req.user = user;
+      const { rows } = await query('SELECT id, email, name, role FROM users WHERE id = $1', [payload.id]);
+      if (rows[0]) req.user = rows[0];
     } catch {
       /* invalid/expired token -> treated as anonymous */
     }

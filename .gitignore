@@ -13,11 +13,17 @@ build/
 !.env.example
 **/.env
 
-# SQLite database (re-seeds itself on first run)
+# Databases (re-seed themselves on first run)
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
+# Local PGlite data directory
+server/.pgdata/
+.pgdata/
+
+# Vercel
+.vercel
 
 # Uploaded product photos (runtime data)
 server/uploads/*
