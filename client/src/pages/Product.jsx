@@ -4,8 +4,9 @@ import { C, FONT, eur, seriesOf } from '../theme.js';
 import { useProducts } from '../context/ProductsContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import { BearingBig } from '../components/BearingGraphics.jsx';
+import { BearingTechnical } from '../components/BearingGraphics.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import { TempBadge, partNo } from '../components/ui.jsx';
 
 export default function Product() {
   const { sku } = useParams();
@@ -20,85 +21,100 @@ export default function Product() {
   if (loading) return <Center>Loading…</Center>;
   if (!p) return (
     <Center>
-      <div style={{ fontFamily: FONT.mono, fontSize: 13, color: C.muted, marginBottom: 16 }}>Bearing not found.</div>
+      <div style={{ color: C.textSoft, marginBottom: 14 }}>This bearing could not be found.</div>
       <Link to="/catalogue">← Back to catalogue</Link>
     </Center>
   );
 
   const s = seriesOf(p.series);
   const specs = [
-    ['Bore d', `${p.d} mm`],
-    ['Outer Ø D', `${p.D} mm`],
-    ['Width W', `${p.W} mm`],
+    ['Bore Ø (d)', `${p.d} mm`],
+    ['Outer Ø (D)', `${p.D} mm`],
+    ['Width (W)', `${p.W} mm`],
     ['Weight', `${p.weight_g} g`],
     ['Limiting speed', `${p.rpm} rpm`],
-    ['Static load @ 20 °C', `${p.c0.toFixed(2)} kN`],
-    [`Static load @ ${s.temp} °C`, `${(p.c0 * 0.88).toFixed(2)} kN`],
-    ['Operating range', s.range.toLowerCase()],
-    ['SKU', p.sku.replace(/\s/g, '')],
+    ['Static load rating @ 20 °C', `${p.c0.toFixed(2)} kN`],
+    [`Static load rating @ ${s.temp} °C`, `${(p.c0 * 0.88).toFixed(2)} kN`],
+    ['Operating range', s.range],
+    ['Part number', p.sku.replace(/\s/g, '')],
   ];
   const related = products.filter((x) => x.sku !== p.sku && (x.series === p.series || x.model === p.model)).slice(0, 4);
 
-  return (
-    <main style={{ flex: 1, maxWidth: 1280, margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: '32px 40px 64px' }}>
-      <div style={{ fontFamily: FONT.mono, fontSize: 11, letterSpacing: 1, color: C.dim, marginBottom: 28 }}>
-        <Link to="/" style={{ color: C.dim }}>HOME</Link> / <Link to="/catalogue" style={{ color: C.dim }}>CATALOGUE</Link> / <span style={{ color: C.muted }}>{p.sku}</span>
-      </div>
+  function addToCart() {
+    add(p.sku, qty);
+    push({ title: `Added to cart (×${qty})`, subtitle: p.sku, action: { label: 'View cart', to: '/cart' } });
+  }
 
-      <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56, alignItems: 'start' }}>
-        {/* render / photo */}
-        <div style={{ background: C.panel2, border: `1px solid ${C.faint}`, borderRadius: 12, padding: 40, position: 'sticky', top: 88 }}>
-          {p.image ? (
-            <img src={p.image} alt={p.sku} style={{ width: '100%', borderRadius: 8, filter: `drop-shadow(0 0 34px ${s.c}44)` }} />
-          ) : (
-            <BearingBig color={s.c} dmm={`${p.d} mm`} Dmm={`${p.D} mm`} Wmm={`${p.W} mm`} />
-          )}
+  return (
+    <main className="page-pad" style={{ flex: 1, maxWidth: 1240, margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: '24px 24px 56px' }}>
+      <nav style={{ fontSize: 13.5, color: C.textMute, marginBottom: 22 }}>
+        <Link to="/" style={{ color: C.textMute }}>Home</Link> <span style={{ color: C.borderStrong }}>/</span> <Link to="/catalogue" style={{ color: C.textMute }}>Catalogue</Link> <span style={{ color: C.borderStrong }}>/</span> <span style={{ color: C.textSoft }}>{p.sku}</span>
+      </nav>
+
+      <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 44, alignItems: 'start' }}>
+        {/* image */}
+        <div style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12, padding: 32, position: 'sticky', top: 84, boxShadow: C.shadow }}>
+          <div style={{ background: C.imageBg, borderRadius: 10, padding: 24, display: 'flex', justifyContent: 'center' }}>
+            {p.image
+              ? <img src={p.image} alt={p.sku} style={{ maxWidth: '100%', maxHeight: 340, objectFit: 'contain' }} />
+              : <BearingTechnical accent={s.c} dmm={`${p.d} mm`} Dmm={`${p.D} mm`} Wmm={`${p.W} mm`} />}
+          </div>
         </div>
 
-        {/* info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-          <span style={{ alignSelf: 'flex-start', fontFamily: FONT.mono, fontSize: 11, letterSpacing: 2, color: s.c, border: `1px solid ${s.c}55`, borderRadius: 999, padding: '6px 14px', textShadow: `0 0 12px ${s.c}55` }}>{s.temp} °C · {s.range}</span>
-          <h1 style={{ margin: 0, fontSize: 40, fontWeight: 700, letterSpacing: -1 }}>{p.sku}</h1>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
-            <span style={{ fontSize: 32, fontWeight: 700 }}>{eur(p.price)}</span>
-            <span style={{ fontFamily: FONT.mono, fontSize: 11, color: C.dim }}>{p.stock > 0 ? `${p.stock} IN STOCK` : 'BACKORDER'} · CAN BE BACKORDERED</span>
-          </div>
-          <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.7, color: C.muted }}>{s.desc}</p>
-          <div style={{ fontFamily: FONT.mono, fontSize: 11, letterSpacing: 1, color: C.muted, borderLeft: `2px solid ${s.c}`, paddingLeft: 14, lineHeight: 1.9 }}>{s.tech}</div>
+        {/* details */}
+        <div>
+          <TempBadge series={s} style={{ fontSize: 13, padding: '4px 11px' }} />
+          <h1 style={{ margin: '12px 0 6px', fontSize: 30, fontWeight: 700, color: C.ink }}>{p.sku}</h1>
+          <div style={{ fontSize: 14, color: C.textMute, marginBottom: 18 }}>{s.temp} °C class · {s.range}</div>
 
-          <div style={{ display: 'flex', gap: 12, alignItems: 'stretch', marginTop: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${C.faint3}`, borderRadius: 6 }}>
-              <QtyBtn onClick={() => setQty((q) => Math.max(1, q - 1))}>−</QtyBtn>
-              <span style={{ fontFamily: FONT.mono, fontSize: 14, minWidth: 32, textAlign: 'center' }}>{qty}</span>
-              <QtyBtn onClick={() => setQty((q) => q + 1)}>+</QtyBtn>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 6 }}>
+            <span style={{ fontSize: 32, fontWeight: 700, color: C.ink }}>{eur(p.price)}</span>
+            <span style={{ fontSize: 14, color: p.stock > 0 ? C.success : C.warn, fontWeight: 600 }}>
+              {p.stock > 0 ? `In stock (${p.stock})` : 'Available on backorder'}
+            </span>
+          </div>
+          <div style={{ fontSize: 13.5, color: C.textMute, marginBottom: 20 }}>Price excl. VAT · can be backordered</div>
+
+          <p style={{ margin: '0 0 22px', fontSize: 15.5, lineHeight: 1.7, color: C.textSoft }}>{s.desc}</p>
+
+          {/* add to cart */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'stretch', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${C.borderStrong}`, borderRadius: 8, background: '#fff' }}>
+              <QtyBtn onClick={() => setQty((q) => Math.max(1, q - 1))} label="Decrease quantity">−</QtyBtn>
+              <span style={{ fontSize: 16, fontWeight: 600, minWidth: 40, textAlign: 'center' }}>{qty}</span>
+              <QtyBtn onClick={() => setQty((q) => q + 1)} label="Increase quantity">+</QtyBtn>
             </div>
-            <button onClick={() => { add(p.sku, qty); push({ title: `ADDED TO CART · ×${qty}`, subtitle: p.sku, color: s.c, action: { label: 'VIEW CART →', to: '/cart' } }); }} className="beco-hover"
-              style={{ flex: 1, background: C.ember, color: '#0b0d10', border: 'none', borderRadius: 6, padding: 16, fontFamily: FONT.mono, fontSize: 12, letterSpacing: 2, fontWeight: 500, cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = C.emberSoft)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = C.ember)}>
-              ADD TO CART — {eur(p.price * qty)}
+            <button onClick={addToCart} className="link-hover"
+              style={{ flex: 1, background: C.brand, color: '#fff', border: 'none', borderRadius: 8, padding: '14px', fontSize: 15.5, fontWeight: 600, cursor: 'pointer' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = C.brandDark)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = C.brand)}>
+              Add to cart — {eur(p.price * qty)}
             </button>
           </div>
-          <div style={{ fontFamily: FONT.mono, fontSize: 10, letterSpacing: 1, color: C.dim }}>GUARANTEED SAFE CHECKOUT · VISA / MASTERCARD · MIN ORDER 20 €</div>
-
-          <div style={{ marginTop: 8 }}>
-            <div style={{ fontFamily: FONT.mono, fontSize: 10, letterSpacing: 3, color: C.dim, marginBottom: 10 }}>TECHNICAL DATA</div>
-            <div style={{ border: `1px solid ${C.faint}`, borderRadius: 8, overflow: 'hidden' }}>
-              {specs.map(([k, v], i) => (
-                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '11px 16px', borderBottom: i < specs.length - 1 ? '1px solid rgba(255,255,255,.06)' : 'none', fontFamily: FONT.mono, fontSize: 12 }}>
-                  <span style={{ color: C.muted }}>{k}</span><span style={{ color: C.text }}>{v}</span>
-                </div>
-              ))}
-            </div>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13, color: C.textMute, marginBottom: 28 }}>
+            <span>✓ Secure checkout</span><span>✓ Visa / Mastercard</span><span>✓ Min. order €20</span>
           </div>
+
+          {/* specs */}
+          <h2 style={{ margin: '0 0 12px', fontSize: 17, fontWeight: 700, color: C.text }}>Technical specifications</h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+            <tbody>
+              {specs.map(([k, v], i) => (
+                <tr key={k} style={{ background: i % 2 ? C.bgAlt : '#fff' }}>
+                  <td style={{ padding: '11px 14px', fontSize: 14, color: C.textSoft, borderBottom: `1px solid ${C.border}` }}>{k}</td>
+                  <td style={{ padding: '11px 14px', fontSize: 14, color: C.text, fontWeight: 500, textAlign: 'right', borderBottom: `1px solid ${C.border}`, ...(k === 'Part number' ? partNo : {}) }}>{v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
       {related.length > 0 && (
-        <div style={{ marginTop: 64 }}>
-          <h2 style={{ margin: '0 0 20px', fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>Related bearings</h2>
-          <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
-            {related.map((r) => <ProductCard key={r.sku} product={r} variant="related" />)}
+        <div style={{ marginTop: 52 }}>
+          <h2 style={{ margin: '0 0 18px', fontSize: 22, fontWeight: 700, color: C.ink }}>Related bearings</h2>
+          <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
+            {related.map((r) => <ProductCard key={r.sku} product={r} />)}
           </div>
         </div>
       )}
@@ -106,11 +122,11 @@ export default function Product() {
   );
 }
 
-function QtyBtn({ children, onClick }) {
+function QtyBtn({ children, onClick, label }) {
   return (
-    <button onClick={onClick} className="beco-hover"
-      style={{ background: 'none', border: 'none', color: C.text, width: 42, height: 44, fontSize: 18, cursor: 'pointer' }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = C.ember)}
+    <button onClick={onClick} aria-label={label} className="link-hover"
+      style={{ background: 'none', border: 'none', color: C.text, width: 42, height: 46, fontSize: 20, cursor: 'pointer' }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = C.brand)}
       onMouseLeave={(e) => (e.currentTarget.style.color = C.text)}>{children}</button>
   );
 }

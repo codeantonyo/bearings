@@ -2,7 +2,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
-import { SvgDefs } from './components/BearingGraphics.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import Home from './pages/Home.jsx';
 import Catalogue from './pages/Catalogue.jsx';
@@ -30,8 +29,7 @@ function ScrollToTop() {
 
 export default function App() {
   return (
-    <div style={{ fontFamily: "'Space Grotesk', sans-serif", background: '#0b0d10', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <SvgDefs />
+    <div style={{ background: '#f4f6f8', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <ScrollToTop />
       <Header />
       <Routes>

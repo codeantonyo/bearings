@@ -1,8 +1,9 @@
-import { useNavigate } from 'react-router-dom';
-import { C, FONT, eur, seriesOf, MIN_ORDER } from '../theme.js';
+import { Link, useNavigate } from 'react-router-dom';
+import { C, eur, seriesOf, MIN_ORDER } from '../theme.js';
 import { useCart } from '../context/CartContext.jsx';
 import { useProducts } from '../context/ProductsContext.jsx';
-import { PrimaryButton, Alert } from '../components/ui.jsx';
+import { BearingMark } from '../components/BearingGraphics.jsx';
+import { PrimaryButton, Alert, partNo } from '../components/ui.jsx';
 
 export default function Cart() {
   const nav = useNavigate();
@@ -14,64 +15,75 @@ export default function Cart() {
   const belowMin = subtotal > 0 && subtotal < MIN_ORDER;
 
   return (
-    <main style={{ flex: 1, maxWidth: 900, margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: '48px 40px 72px' }}>
-      <h1 style={{ margin: '0 0 28px', fontSize: 34, fontWeight: 700, letterSpacing: -1 }}>Cart</h1>
+    <main className="page-pad" style={{ flex: 1, maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: '28px 24px 56px' }}>
+      <h1 style={{ margin: '0 0 22px', fontSize: 28, fontWeight: 700, color: C.ink }}>Shopping cart</h1>
 
       {rows.length === 0 ? (
-        <div style={{ border: `1px dashed ${C.faint3}`, borderRadius: 12, padding: 72, textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center' }}>
-          <span style={{ fontFamily: FONT.mono, fontSize: 12, letterSpacing: 2, color: C.dim }}>NO PRODUCTS IN THE CART</span>
-          <PrimaryButton onClick={() => nav('/catalogue')} style={{ padding: '13px 26px', fontSize: 11 }}>BROWSE CATALOGUE →</PrimaryButton>
+        <div style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12, padding: 56, textAlign: 'center', boxShadow: C.shadow }}>
+          <p style={{ margin: '0 0 18px', color: C.textSoft }}>Your cart is empty.</p>
+          <PrimaryButton onClick={() => nav('/catalogue')}>Browse the catalogue</PrimaryButton>
         </div>
       ) : (
-        <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {rows.map(({ p, qty }) => {
+        <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 28, alignItems: 'start' }}>
+          {/* items */}
+          <div style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: C.shadow }}>
+            {rows.map(({ p, qty }, i) => {
               const s = seriesOf(p.series);
               return (
-                <div key={p.sku} style={{ display: 'flex', alignItems: 'center', gap: 18, background: C.panel, border: `1px solid ${C.faint}`, borderRadius: 10, padding: '16px 20px' }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: s.c, boxShadow: `0 0 12px ${s.c}` }} />
-                  <button onClick={() => nav(`/product/${encodeURIComponent(p.sku)}`)} className="beco-hover"
-                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', flex: 1 }}>
-                    <div style={{ fontFamily: FONT.mono, fontSize: 13, color: C.text }}>{p.sku}</div>
-                    <div style={{ fontFamily: FONT.mono, fontSize: 11, color: C.dim, marginTop: 3 }}>{p.d} × {p.D} × {p.W} mm · {eur(p.price)} each</div>
-                  </button>
-                  <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${C.faint3}`, borderRadius: 6 }}>
-                    <StepBtn onClick={() => add(p.sku, -1)}>−</StepBtn>
-                    <span style={{ fontFamily: FONT.mono, fontSize: 13, minWidth: 26, textAlign: 'center' }}>{qty}</span>
-                    <StepBtn onClick={() => add(p.sku, 1)}>+</StepBtn>
+                <div key={p.sku} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 16, borderBottom: i < rows.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                  <Link to={`/product/${encodeURIComponent(p.sku)}`} style={{ width: 68, height: 68, background: C.imageBg, border: `1px solid ${C.border}`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {p.image ? <img src={p.image} alt="" style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : <BearingMark size={54} accent={s.c} />}
+                  </Link>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Link to={`/product/${encodeURIComponent(p.sku)}`} style={{ fontSize: 15, fontWeight: 600, color: C.text, textDecoration: 'none' }}>{p.sku}</Link>
+                    <div style={{ ...partNo, fontSize: 12.5, color: C.textMute, marginTop: 3 }}>Ø {p.d} × {p.D} × {p.W} mm · {eur(p.price)} each</div>
                   </div>
-                  <span style={{ fontFamily: FONT.mono, fontSize: 14, fontWeight: 500, minWidth: 76, textAlign: 'right' }}>{eur(p.price * qty)}</span>
-                  <button onClick={() => remove(p.sku)} className="beco-hover"
-                    style={{ background: 'none', border: 'none', color: C.dim, fontSize: 16, cursor: 'pointer', padding: 4 }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = C.ember)}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = C.dim)}>✕</button>
+                  <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${C.borderStrong}`, borderRadius: 8 }}>
+                    <StepBtn onClick={() => add(p.sku, -1)} label="Decrease">−</StepBtn>
+                    <span style={{ fontSize: 14.5, fontWeight: 600, minWidth: 30, textAlign: 'center' }}>{qty}</span>
+                    <StepBtn onClick={() => add(p.sku, 1)} label="Increase">+</StepBtn>
+                  </div>
+                  <span style={{ fontSize: 15.5, fontWeight: 700, minWidth: 76, textAlign: 'right', color: C.text }}>{eur(p.price * qty)}</span>
+                  <button onClick={() => remove(p.sku)} aria-label="Remove item" className="link-hover"
+                    style={{ background: 'none', border: 'none', color: C.textMute, cursor: 'pointer', padding: 6, fontSize: 18, lineHeight: 1 }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = C.danger)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = C.textMute)}>×</button>
                 </div>
               );
             })}
           </div>
 
-          <div style={{ marginTop: 24, background: C.panel2, border: `1px solid ${C.faint}`, borderRadius: 12, padding: '26px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONT.mono, fontSize: 13 }}>
-              <span style={{ color: C.muted }}>SUBTOTAL</span>
-              <span style={{ fontSize: 20, fontWeight: 700, color: C.text }}>{eur(subtotal)}</span>
+          {/* summary */}
+          <div style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12, padding: 22, position: 'sticky', top: 84, boxShadow: C.shadow }}>
+            <h2 style={{ margin: '0 0 16px', fontSize: 17, fontWeight: 700, color: C.text }}>Order summary</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, marginBottom: 6 }}>
+              <span style={{ color: C.textSoft }}>Subtotal</span>
+              <span style={{ fontWeight: 700, color: C.text }}>{eur(subtotal)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: C.textMute, marginBottom: 16 }}>
+              <span>Shipping</span><span>Calculated at next step</span>
             </div>
             {belowMin && (
-              <Alert tone="warn">⚠ MINIMUM ORDER IS 20 € — ADD {eur(MIN_ORDER - subtotal)} MORE, OR <a href="mailto:office@becobearings.com" style={{ color: C.amber, textDecoration: 'underline' }}>CONTACT US</a> FOR A SPECIFIC ORDER.</Alert>
+              <div style={{ marginBottom: 14 }}>
+                <Alert tone="warn">Minimum order is €20. Add {eur(MIN_ORDER - subtotal)} more, or <Link to="/contact" style={{ color: C.warn, textDecoration: 'underline' }}>contact us</Link> for a specific order.</Alert>
+              </div>
             )}
-            <PrimaryButton disabled={belowMin} onClick={() => !belowMin && nav('/checkout')} style={{ padding: 17, width: '100%' }}>PROCEED TO CHECKOUT →</PrimaryButton>
-            <div style={{ fontFamily: FONT.mono, fontSize: 10, letterSpacing: 1, color: C.dim, textAlign: 'center' }}>GUARANTEED SAFE CHECKOUT · VISA / MASTERCARD</div>
+            <PrimaryButton disabled={belowMin} onClick={() => !belowMin && nav('/checkout')} style={{ width: '100%', padding: 14 }}>
+              Proceed to checkout
+            </PrimaryButton>
+            <div style={{ textAlign: 'center', fontSize: 12.5, color: C.textMute, marginTop: 12 }}>Secure checkout · Visa / Mastercard</div>
           </div>
-        </>
+        </div>
       )}
     </main>
   );
 }
 
-function StepBtn({ children, onClick }) {
+function StepBtn({ children, onClick, label }) {
   return (
-    <button onClick={onClick} className="beco-hover"
-      style={{ background: 'none', border: 'none', color: C.text, width: 34, height: 34, fontSize: 15, cursor: 'pointer' }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = C.ember)}
+    <button onClick={onClick} aria-label={label} className="link-hover"
+      style={{ background: 'none', border: 'none', color: C.text, width: 34, height: 36, fontSize: 16, cursor: 'pointer' }}
+      onMouseEnter={(e) => (e.currentTarget.style.color = C.brand)}
       onMouseLeave={(e) => (e.currentTarget.style.color = C.text)}>{children}</button>
   );
 }

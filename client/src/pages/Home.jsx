@@ -1,100 +1,110 @@
 import { useNavigate } from 'react-router-dom';
 import { C, FONT, SERIES } from '../theme.js';
 import { useProducts } from '../context/ProductsContext.jsx';
-import { BearingHero } from '../components/BearingGraphics.jsx';
+import { BearingMark } from '../components/BearingGraphics.jsx';
 import ProductCard from '../components/ProductCard.jsx';
-import { PrimaryButton } from '../components/ui.jsx';
+import { PrimaryButton, SecondaryButton, Eyebrow } from '../components/ui.jsx';
 
 const FEATURED = ['6201 BHTS 330', '6200 BHTS ZZ C4 200', '6204 BHTS ZZ C4 350', '6206 BHTS ZZ C4 280'];
-const INDUSTRIES = ['Air conveyors', 'Industrial fans', 'Packaging machinery', 'Steel industry', 'Ceramic industry', 'Papermaking industry'];
+const INDUSTRIES = ['Air conveyors', 'Industrial fans', 'Packaging machinery', 'Steel industry', 'Ceramic industry', 'Papermaking'];
 
 export default function Home() {
   const nav = useNavigate();
   const { products, bySku } = useProducts();
-
   const countFor = (key) => products.filter((p) => p.series === key).length;
   const featured = FEATURED.map((s) => bySku[s]).filter(Boolean);
 
   return (
     <main style={{ flex: 1 }}>
       {/* hero */}
-      <section className="grid-hero" style={{ display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: 40, alignItems: 'center', padding: '72px 40px 56px', maxWidth: 1280, margin: '0 auto' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-          <div style={{ fontFamily: FONT.mono, fontSize: 12, letterSpacing: 3, color: C.ember }}>HIGH TEMPERATURE BALL BEARINGS</div>
-          <h1 className="hero-h1" style={{ margin: 0, fontSize: 72, lineHeight: 1.02, fontWeight: 700, letterSpacing: -2 }}>Built for<br />the heat.</h1>
-          <p style={{ margin: 0, maxWidth: 440, fontSize: 17, lineHeight: 1.6, color: C.muted }}>Stabilized deep-groove ball bearings rated from −30 °C to +350 °C. Manufactured by Beco Italy, shipped fast from the Netherlands.</p>
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <PrimaryButton onClick={() => nav('/catalogue')}>BROWSE CATALOGUE →</PrimaryButton>
-            <a href="mailto:office@becobearings.com" className="beco-hover"
-              style={{ display: 'inline-flex', alignItems: 'center', border: `1px solid ${C.faint4}`, borderRadius: 6, padding: '15px 28px', fontFamily: FONT.mono, fontSize: 12, letterSpacing: 2, color: C.text }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.ember; e.currentTarget.style.color = C.ember; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.faint4; e.currentTarget.style.color = C.text; }}>ASK FOR AN OFFER</a>
+      <section style={{ background: '#fff', borderBottom: `1px solid ${C.border}` }}>
+        <div className="grid-hero page-pad" style={{ maxWidth: 1240, margin: '0 auto', padding: '56px 24px', display: 'grid', gridTemplateColumns: '1.1fr .9fr', gap: 48, alignItems: 'center' }}>
+          <div>
+            <Eyebrow>High-temperature ball bearings</Eyebrow>
+            <h1 className="hero-h1" style={{ margin: '0 0 18px', fontSize: 46, lineHeight: 1.1, fontWeight: 700, color: C.ink, letterSpacing: '-0.01em' }}>
+              Bearings that keep running where standard ones fail
+            </h1>
+            <p style={{ margin: '0 0 26px', maxWidth: 480, fontSize: 17, lineHeight: 1.6, color: C.textSoft }}>
+              Stabilized deep-groove ball bearings rated from −30 °C to +350 °C. Manufactured by Beco Italy,
+              ordered directly and shipped fast from the Netherlands.
+            </p>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <PrimaryButton onClick={() => nav('/catalogue')}>Browse the catalogue</PrimaryButton>
+              <SecondaryButton onClick={() => nav('/contact')}>Request an offer</SecondaryButton>
+            </div>
+            <div style={{ display: 'flex', gap: 36, marginTop: 34 }}>
+              <Stat n={products.length || '—'} label="Products in stock" />
+              <Stat n="4" label="Temperature classes" />
+              <Stat n="EU" label="Shipped from NL" />
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 40, marginTop: 16, fontFamily: FONT.mono }}>
-            <Stat n={products.length || '—'} label="SKUs IN STOCK" />
-            <Stat n="4" label="TEMP CLASSES" />
-            <Stat n="EU" label="SHIPPED FROM NL" />
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ background: C.imageBg, border: `1px solid ${C.border}`, borderRadius: 16, padding: 40, width: '100%', maxWidth: 380, display: 'flex', justifyContent: 'center' }}>
+              <BearingMark size={260} accent={C.brand} />
+            </div>
           </div>
-        </div>
-        <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-          <BearingHero />
         </div>
       </section>
 
-      {/* heat scale */}
-      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 40px 64px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700, letterSpacing: -0.5 }}>Pick your temperature class</h2>
-          <span style={{ fontFamily: FONT.mono, fontSize: 11, letterSpacing: 2, color: C.dim }}>GLOW = RATED HEAT</span>
+      {/* trust strip */}
+      <section style={{ background: '#fff', borderBottom: `1px solid ${C.border}` }}>
+        <div className="page-pad" style={{ maxWidth: 1240, margin: '0 auto', padding: '18px 24px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 14, color: C.textSoft }}>
+          <span style={{ fontWeight: 600, color: C.text }}>Trusted in:</span>
+          {INDUSTRIES.map((ind, i) => (
+            <span key={ind} style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
+              {i > 0 && <span style={{ color: C.borderStrong }}>•</span>}{ind}
+            </span>
+          ))}
         </div>
-        <div style={{ height: 4, borderRadius: 2, background: 'linear-gradient(90deg,#e0512e,#ff7a2f 38%,#ffb24d 72%,#ffe9cf)', marginBottom: 28 }} />
-        <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18 }}>
+      </section>
+
+      {/* temperature classes */}
+      <section className="page-pad" style={{ maxWidth: 1240, margin: '0 auto', padding: '52px 24px 12px' }}>
+        <h2 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 700, color: C.ink }}>Shop by temperature class</h2>
+        <p style={{ margin: '0 0 26px', fontSize: 15.5, color: C.textSoft }}>Four continuous-duty ratings — pick the maximum temperature your application sees.</p>
+        <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
           {Object.values(SERIES).map((s) => (
-            <button key={s.key} onClick={() => nav(`/catalogue?series=${s.key}`)} className="beco-hover"
-              style={{ textAlign: 'left', background: C.panel, border: `1px solid ${C.faint}`, borderRadius: 10, padding: '26px 24px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: `inset 0 -60px 60px -70px ${s.c}` }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = s.c)}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = C.faint)}>
-              <div style={{ fontSize: 42, fontWeight: 700, letterSpacing: -1, color: s.c, textShadow: `0 0 24px ${s.c}88` }}>{s.temp}°</div>
-              <div style={{ fontFamily: FONT.mono, fontSize: 12, letterSpacing: 1, color: C.text }}>{s.label}</div>
-              <div style={{ fontFamily: FONT.mono, fontSize: 11, color: C.muted }}>{s.range}</div>
-              <div style={{ fontFamily: FONT.mono, fontSize: 10, letterSpacing: 2, color: C.dim, marginTop: 6 }}>{countFor(s.key)} SIZES →</div>
+            <button key={s.key} onClick={() => nav(`/catalogue?series=${s.key}`)} className="card-hover"
+              style={{ textAlign: 'left', background: '#fff', border: `1px solid ${C.border}`, borderTop: `3px solid ${s.c}`, borderRadius: 10, padding: '22px 20px', cursor: 'pointer', boxShadow: C.shadow }}>
+              <div style={{ fontSize: 30, fontWeight: 700, color: C.ink }}>{s.temp} °C</div>
+              <div style={{ fontSize: 14.5, fontWeight: 600, color: C.text, marginTop: 8 }}>{s.label}</div>
+              <div style={{ fontSize: 13.5, color: C.textMute, marginTop: 3 }}>{s.range}</div>
+              <div style={{ fontSize: 13.5, color: C.brand, fontWeight: 600, marginTop: 14 }}>{countFor(s.key)} sizes →</div>
             </button>
           ))}
         </div>
       </section>
 
-      {/* industries */}
-      <section style={{ borderTop: `1px solid ${C.faint}`, borderBottom: `1px solid ${C.faint}`, background: C.panel2 }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '26px 40px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: FONT.mono, fontSize: 10, letterSpacing: 3, color: C.dim, marginRight: 8 }}>DESIGNED FOR</span>
-          {INDUSTRIES.map((ind) => (
-            <span key={ind} style={{ fontFamily: FONT.mono, fontSize: 11, letterSpacing: 1, color: C.muted, border: `1px solid ${C.faint2}`, borderRadius: 999, padding: '7px 16px' }}>{ind}</span>
-          ))}
-        </div>
-      </section>
-
       {/* featured */}
-      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '56px 40px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
-          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700, letterSpacing: -0.5 }}>Top sale</h2>
-          <button onClick={() => nav('/catalogue')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: FONT.mono, fontSize: 11, letterSpacing: 2, color: C.ember }}>VIEW ALL →</button>
+      <section className="page-pad" style={{ maxWidth: 1240, margin: '0 auto', padding: '40px 24px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
+          <h2 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: C.ink }}>Best sellers</h2>
+          <button onClick={() => nav('/catalogue')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14.5, fontWeight: 600, color: C.brand }}>View all →</button>
         </div>
-        <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18 }}>
-          {featured.map((p) => <ProductCard key={p.sku} product={p} variant="featured" />)}
+        <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
+          {featured.map((p) => <ProductCard key={p.sku} product={p} />)}
         </div>
       </section>
 
-      {/* about strip */}
-      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '0 40px 72px' }}>
-        <div className="grid-2" style={{ background: C.panel, border: `1px solid ${C.faint}`, borderRadius: 12, padding: '36px 40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40 }}>
+      {/* about band */}
+      <section className="page-pad" style={{ maxWidth: 1240, margin: '0 auto', padding: '44px 24px 64px' }}>
+        <div className="grid-2" style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12, padding: '34px 36px', display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 40, boxShadow: C.shadow }}>
           <div>
-            <div style={{ fontFamily: FONT.mono, fontSize: 10, letterSpacing: 3, color: C.ember, marginBottom: 12 }}>ABOUT BECO</div>
-            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: C.muted }}>Beco Italy has spent decades pushing the limits of what a bearing can survive. Beco Netherlands, opened in 2023, brings that catalogue closer — direct ordering, faster shipping and EU-local support.</p>
+            <Eyebrow>About BECO</Eyebrow>
+            <p style={{ margin: 0, fontSize: 16, lineHeight: 1.7, color: C.textSoft }}>
+              Beco Italy has spent decades developing the stabilization treatments, clearances and lubricants that keep
+              bearings running at extreme temperatures. Beco Netherlands, opened in 2023, brings that catalogue closer —
+              direct ordering, faster shipping and EU-local support.
+            </p>
+            <div style={{ marginTop: 18 }}>
+              <SecondaryButton onClick={() => nav('/about')}>Learn more about us</SecondaryButton>
+            </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center', fontFamily: FONT.mono, fontSize: 12, color: C.muted }}>
-            <div><span style={{ color: C.dim }}>TEL&nbsp;&nbsp;&nbsp;</span> <a href="https://wa.me/37360948118">+373 60 948 118</a></div>
-            <div><span style={{ color: C.dim }}>MAIL&nbsp;&nbsp;</span> <a href="mailto:office@becobearings.com">office@becobearings.com</a></div>
-            <div><span style={{ color: C.dim }}>MIN&nbsp;&nbsp;&nbsp;</span> 20 € minimum order · personalized offers via contact form</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, justifyContent: 'center' }}>
+            <Row k="Manufacturer" v="Beco Italy" />
+            <Row k="EU branch" v="Netherlands · 2023" />
+            <Row k="Temperature range" v="−30 … +350 °C" />
+            <Row k="Minimum order" v="€20" />
           </div>
         </div>
       </section>
@@ -105,8 +115,17 @@ export default function Home() {
 function Stat({ n, label }) {
   return (
     <div>
-      <div style={{ fontSize: 26, color: C.text }}>{n}</div>
-      <div style={{ fontSize: 10, letterSpacing: 2, color: C.dim, marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: C.ink }}>{n}</div>
+      <div style={{ fontSize: 13, color: C.textMute, marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+function Row({ k, v }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, borderBottom: `1px solid ${C.border}`, paddingBottom: 11, fontSize: 14.5 }}>
+      <span style={{ color: C.textMute }}>{k}</span>
+      <span style={{ color: C.text, fontWeight: 600 }}>{v}</span>
     </div>
   );
 }
